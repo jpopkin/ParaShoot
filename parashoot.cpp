@@ -8,8 +8,13 @@
 #include <GL/glx.h>
 #include <GL/gl.h>
 #include <X11/Xutil.h>
-#define WINDOW_WIDTH  800
-#define WINDOW_HEIGHT 600
+#include "log.h"
+#include "ppm.h"
+extern "C" {
+#include "fonts.h"
+}
+#define WINDOW_WIDTH  1250
+#define WINDOW_HEIGHT 900
 #define MAX_PARTICLES 1
 #define GRAVITY 3.0
 
@@ -18,7 +23,7 @@ Display *dpy;
 Window win;
 GLXContext glc;
 
-int xres= 1250, yres=900;
+int xres= WINDOW_WIDTH, yres=WINDOW_HEIGHT;
 bool size_flag = false;//Structures
 
 struct Vec {
@@ -52,6 +57,23 @@ void movement(Game *game);
 void render(Game *game);
 void check_resize(Game *game, XEvent *e);
 
+//-----------------------------------------------------------------------------
+//Setup timers
+const double physicsRate = 1.0 / 30.0;
+const double oobillion = 1.0 / 1e9;
+struct timespec timeStart, timeCurrent;
+struct timespec timePause;
+double physicsCountdown=0.0;
+double timeSpan=0.0;
+double timeDiff(struct timespec *start, struct timespec *end) {
+    return (double)(end->tv_sec - start->tv_sec ) +
+	(double)(end->tv_nsec - start->tv_nsec) * oobillion;
+}
+void timeCopy(struct timespec *dest, struct timespec *source) {
+    memcpy(dest, source, sizeof(struct timespec));
+}
+//-----------------------------------------------------------------------------
+
 int main(void)
 {
     int done=0;
@@ -61,12 +83,8 @@ int main(void)
     //declare game object
     Game game;
     game.n=0;
-
-    //declare a box shape
-    game.box.width = 100;
-    game.box.height = 10;
-    game.box.center.x = 120 + 5*65;
-    game.box.center.y = 500 - 5*60;
+    clock_gettime(CLOCK_REALTIME, &timePause);
+    clock_gettime(CLOCK_REALTIME, &timeStart);
 
     //start animation
     while(!done) {
@@ -77,7 +95,14 @@ int main(void)
 	    check_resize(&game, &e);
 	    done = check_keys(&e, &game);
 	}
-	movement(&game);
+    clock_gettime(CLOCK_REALTIME, &timeCurrent);
+    timeSpan = timeDiff(&timeStart, &timeCurrent);
+    timeCopy(&timeStart, &timeCurrent);
+    physicsCountdown += timeSpan;
+    while(physicsCountdown >= physicsRate) {
+        movement(&game);
+        physicsCountdown -= physicsRate;
+    }
 	render(&game);
 	glXSwapBuffers(dpy, win);
     }
@@ -150,7 +175,7 @@ void reshape_window(Game *game, int width, int height)
     p->s.center.y = yres/2;
 }
 
-void init_opengl(void)
+void init_opengl(void) 
 {
     //OpenGL initialization
     glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
@@ -165,20 +190,17 @@ void init_opengl(void)
 
 void check_resize(Game *game, XEvent *e)
 {
-
     if(e->type != ConfigureNotify)
-	return;
+	    return;
 
     XConfigureEvent xce = e->xconfigure;
     if(xce.width != xres || xce.height != yres) {
-	reshape_window(game, xce.width, xce.height);
+	    reshape_window(game, xce.width, xce.height);
     }
-
-
-
 }
 
-void makeParticle(Game *game, int x, int y) {
+void makeParticle(Game *game, int x, int y)
+{
     if (game->n >= MAX_PARTICLES)
 	return;
     std::cout << "makeParticle() " << x << " " << y << std::endl;
@@ -190,6 +212,7 @@ void makeParticle(Game *game, int x, int y) {
     p->velocity.x = 0;
     game->n++;
 }
+
 void check_mouse(XEvent *e, Game *game)
 {
     static int savex = 0;
@@ -286,25 +309,7 @@ void render(Game *game)
 {
     float w, h;
     glClear(GL_COLOR_BUFFER_BIT);
-    //Draw shapes...
-
-    /*draw box
-      Shape *s;
-      glColor3ub(90,140,90);
-      s = &game->box;
-      glPushMatrix();
-      glTranslatef(s->center.x, s->center.y, s->center.z);
-      w = s->width;
-      h = s->height;
-      glBegin(GL_QUADS);
-      glVertex2i(-w,-h);
-      glVertex2i(-w, h);
-      glVertex2i( w, h);
-      glVertex2i( w,-h);
-      glEnd();
-      glPopMatrix();
-      */
-    //draw all particles here
+    //draw character here
     glPushMatrix();
     glColor3ub(125,0,220);
     Vec *c = &game->particle.s.center;

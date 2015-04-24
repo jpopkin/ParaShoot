@@ -25,6 +25,7 @@ GLXContext glc;
 
 int xres= WINDOW_WIDTH, yres=WINDOW_HEIGHT;
 bool size_flag = false;//Structures
+bool start_flag = true;
 
 struct Vec {
     float x, y, z;
@@ -108,6 +109,7 @@ int main(void)
 	glXSwapBuffers(dpy, win);
     }
     cleanupXWindows();
+    cleanup_fonts();
     return 0;
 }
 
@@ -187,6 +189,8 @@ void init_opengl(void)
     glOrtho(0, WINDOW_WIDTH, 0, WINDOW_HEIGHT, -1, 1);
     //Set the screen background color
     glClearColor(0.1, 0.5, 1.0, 1.0);
+    glEnable(GL_TEXTURE_2D);
+    initialize_fonts();
 }
 
 void check_resize(Game *game, XEvent *e)
@@ -200,11 +204,8 @@ void check_resize(Game *game, XEvent *e)
     }
 }
 
-void makeParticle(Game *game, int x, int y)
+void makeParticle(Game *game)
 {
-    if (game->n >= MAX_PARTICLES)
-	return;
-    std::cout << "makeParticle() " << x << " " << y << std::endl;
     //position of particle
     Particle *p = &game->particle;
     p->s.center.x = WINDOW_WIDTH/2;
@@ -226,8 +227,8 @@ void check_mouse(XEvent *e, Game *game)
     if (e->type == ButtonPress) {
 	if (e->xbutton.button==1) {
 	    //Left button was pressed
-	    int y = WINDOW_HEIGHT - e->xbutton.y;
-	    makeParticle(game, e->xbutton.x, y);
+	    start_flag = false;
+	    makeParticle(game);
 	    return;
 	}
 	if (e->xbutton.button==3) {
@@ -285,7 +286,6 @@ void movement(Game *game)
 
     //check for off-screen
     if (p->s.center.y < 0.0) {
-	std::cout << "off screen" << std::endl;
 	game->n = 0;
     }
     if(size_flag == true){
@@ -315,7 +315,7 @@ void render(Game *game)
     glColor3ub(125,0,220);
     Vec *c = &game->particle.s.center;
 
-    w = 12;
+        w = 12;
     h = 12;
     glBegin(GL_QUADS);
     glVertex2i(c->x-w, c->y-h);
@@ -324,4 +324,33 @@ void render(Game *game)
     glVertex2i(c->x+w, c->y-h);
     glEnd();
     glPopMatrix();
+    
+    if(start_flag)
+    {
+    Rect start;
+    Rect click;
+
+    start.centerx = xres/2;
+    start.centery = yres/2 + 400;
+    start.bot = yres/2 + 400;
+    start.width = 500;
+    start.height = 100;
+    start.center = xres/2 + 400;
+    start.left = start.centerx;
+    start.right = start.centerx;
+    start.top = yres/2 + 400;
+
+    click.centerx = xres/2;
+    click.centery = yres/2 + 375;
+    click.bot = yres/2 + 375;
+    click.width = 500;
+    click.height = 100;
+    click.center = xres/2 + 375;
+    click.left = click.centerx;
+    click.right = click.centerx;
+    click.top = yres/2 + 375;
+    
+    ggprint16(&start, 1000, 0x00fff000, "PARASHOOT!");
+    ggprint16(&click, 1000, 0x00fff000, "Click to start");
+    }
 }

@@ -47,6 +47,7 @@ struct Game {
     int n;
 };
 
+
 //Function prototypes
 void initXWindows(void);
 void init_opengl(void);

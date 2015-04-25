@@ -13,8 +13,8 @@
 extern "C" {
 #include "fonts.h"
 }
-#define WINDOW_WIDTH  1250
-#define WINDOW_HEIGHT 900
+#define WINDOW_WIDTH  800
+#define WINDOW_HEIGHT 800
 #define MAX_PARTICLES 1
 #define GRAVITY 3.0
 
@@ -23,9 +23,13 @@ Display *dpy;
 Window win;
 GLXContext glc;
 
-int xres= WINDOW_WIDTH, yres=WINDOW_HEIGHT;
+int xres = WINDOW_WIDTH , yres = WINDOW_HEIGHT;
 bool size_flag = false;//Structures
 bool start_flag = true;
+
+Ppmimage *skyImage = NULL;
+GLuint skyTexture;
+int sky = 1;
 
 struct Vec {
     float x, y, z;
@@ -40,6 +44,10 @@ struct Shape {
 struct Particle {
     Shape s;
     Vec velocity;
+    Particle() {
+        s.center.x = xres/2;
+        s.center.y = yres/2;
+    }
 };
 
 struct Game {
@@ -178,6 +186,46 @@ void reshape_window(Game *game, int width, int height)
     p->s.center.y = yres/2;
 }
 
+
+unsigned char *buildAlphaData(Ppmimage *img)
+{
+    //add 4th component to RGB stream...
+    int a,b,c;
+    unsigned char *newdata, *ptr;
+    unsigned char *data = (unsigned char *)img->data;
+    //newdata = (unsigned char *)malloc(img->width * img->height * 4);
+    newdata = new unsigned char[img->width * img->height * 4];
+    ptr = newdata;
+    for (int i=0; i<img->width * img->height * 3; i+=3) {
+	a = *(data+0);
+	b = *(data+1);
+	c = *(data+2);
+	*(ptr+0) = a;
+	*(ptr+1) = b;
+	*(ptr+2) = c;
+	//
+	//get the alpha value
+	//
+	//original code
+	//get largest color component...
+	//*(ptr+3) = (unsigned char)((
+	//		(int)*(ptr+0) +
+	//		(int)*(ptr+1) +
+	//		(int)*(ptr+2)) / 3);
+	//d = a;
+	//if (b >= a && b >= c) d = b;
+	//if (c >= a && c >= b) d = c;
+	//*(ptr+3) = d;
+	//
+	//new code, suggested by Chris Smith, Fall 2013
+	*(ptr+3) = (a|b|c);
+	//
+	ptr += 4;
+	data += 3;
+    }
+    return newdata;
+}
+
 void init_opengl(void) 
 {
     //OpenGL initialization
@@ -187,10 +235,29 @@ void init_opengl(void)
     glMatrixMode(GL_MODELVIEW); glLoadIdentity();
     //Set 2D mode (no perspective)
     glOrtho(0, WINDOW_WIDTH, 0, WINDOW_HEIGHT, -1, 1);
+    
+    glDisable(GL_LIGHTING);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_FOG);
+    glDisable(GL_CULL_FACE);
+    
     //Set the screen background color
     glClearColor(0.1, 0.5, 1.0, 1.0);
     glEnable(GL_TEXTURE_2D);
     initialize_fonts();
+    //
+    //load the images file into a ppm structure
+    //
+    skyImage = ppm6GetImage("./images/Sky.ppm");
+    //create opengl texture elements
+    glGenTextures(1, &skyTexture);
+    //
+    //sky
+    glBindTexture(GL_TEXTURE_2D, skyTexture);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, 3, skyImage->width, skyImage->height,
+        0, GL_RGB, GL_UNSIGNED_BYTE, skyImage->data);
 }
 
 void check_resize(Game *game, XEvent *e)
@@ -308,14 +375,25 @@ void movement(Game *game)
 
 void render(Game *game)
 {
+    //glClearColor(1.0, 1.0, 1.0, 1.0);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glColor3f(1.0, 1.0, 1.0);
+    if (sky) {
+        glBindTexture(GL_TEXTURE_2D, skyTexture);
+        glBegin(GL_QUADS);
+        glTexCoord2f(0.0f, 1.0f); glVertex2i(0, 0);
+        glTexCoord2f(0.0f, 0.0f); glVertex2i(0, yres);
+        glTexCoord2f(1.0f, 0.0f); glVertex2i(xres, yres);
+        glTexCoord2f(1.0f, 1.0f); glVertex2i(xres,0);
+        glEnd();
+    }
     float w, h;
     glClear(GL_COLOR_BUFFER_BIT);
     //draw character here
     glPushMatrix();
     glColor3ub(125,0,220);
     Vec *c = &game->particle.s.center;
-
-        w = 12;
+    w = 12;
     h = 12;
     glBegin(GL_QUADS);
     glVertex2i(c->x-w, c->y-h);

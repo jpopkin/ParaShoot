@@ -44,18 +44,14 @@ struct Shape {
     Vec center;
 };
 
-struct Particle {
+struct Character {
     Shape s;
     Vec velocity;
-    Particle() {
-        s.center.x = xres/2;
-        s.center.y = yres/2;
-    }
 };
 
 struct Game {
     Shape box;
-    Particle particle;
+    Character character;
     int n;
 };
 
@@ -175,7 +171,7 @@ void initXWindows(void) {
 
 void reshape_window(Game *game, int width, int height)
 {
-    Particle *p = &game->particle;
+    Character *p = &game->character;
     size_flag = true;
     setup_screen_res(width, height);
     p->s.center.x = xres/2;
@@ -271,15 +267,16 @@ void check_resize(Game *game, XEvent *e)
     }
 }
 
-void makeParticle(Game *game)
+void makeCharacter(Game *game)
 {
-    //position of particle
-    Particle *p = &game->particle;
+    //position of character
+    Character *p = &game->character;
     p->s.center.x = WINDOW_WIDTH/2;
     p->s.center.y = WINDOW_HEIGHT/2;
     p->velocity.y = 0;
     p->velocity.x = 0;
-    game->n++;
+    //game->n++;
+    start_flag = false;
 }
 
 void check_mouse(XEvent *e, Game *game)
@@ -294,8 +291,8 @@ void check_mouse(XEvent *e, Game *game)
     if (e->type == ButtonPress) {
         if (e->xbutton.button==1) {
             //Left button was pressed
-            start_flag = false;
-            makeParticle(game);
+            if(start_flag)
+                makeCharacter(game);
             return;
         }
         if (e->xbutton.button==3) {
@@ -314,7 +311,7 @@ void check_mouse(XEvent *e, Game *game)
 
 int check_keys(XEvent *e, Game *game)
 {
-    Particle *p;
+    Character *p;
     //Was there input from the keyboard?
     if (e->type == KeyPress) {
         int key = XLookupKeysym(&e->xkey, 0);
@@ -322,7 +319,7 @@ int check_keys(XEvent *e, Game *game)
             return 1;
         }
     }
-    p = &game->particle;
+    p = &game->character;
     //You may check other keys here.
     if (e->type == KeyPress) {
         int key = XLookupKeysym(&e->xkey, 0);
@@ -337,17 +334,17 @@ int check_keys(XEvent *e, Game *game)
 
 void movement(Game *game)
 {
-    Particle *p;
+    Character *p;
 
     if (game->n <= 0)
         return;
 
-    p = &game->particle;
+    p = &game->character;
     /*p->s.center.x += p->velocity.x;
       p->s.center.y += p->velocity.y;
       p->s.center.y -= GRAVITY;
      */
-    //check for collision with shapes...
+    //check for collision with objects here...
     //Shape *s;
 
 
@@ -393,7 +390,7 @@ void render(Game *game)
         //draw character here
         glPushMatrix();
         //glColor3ub(125,0,220);
-        Vec *c = &game->particle.s.center;
+        Vec *c = &game->character.s.center;
         w = 49;
         h = 79;
         glBindTexture(GL_TEXTURE_2D, characterTexture);

@@ -17,6 +17,13 @@ extern "C" {
 #define WINDOW_HEIGHT 800
 #define MAX_PARTICLES 1
 #define GRAVITY 3.0
+#define USE_SOUND
+
+#ifdef USE_SOUND
+#include <FMOD/fmod.h>
+#include <FMOD/wincompat.h>
+#include "fmod.h"
+#endif
 
 //X Windows variables
 Display *dpy;
@@ -65,6 +72,8 @@ int check_keys(XEvent *e, Game *game);
 void movement(Game *game);
 void render(Game *game);
 void check_resize(Game *game, XEvent *e);
+void create_sounds();
+void play();
 
 //-----------------------------------------------------------------------------
 //Setup timers
@@ -89,6 +98,8 @@ int main(void)
     srand(time(NULL));
     initXWindows();
     init_opengl();
+    create_sounds();
+    play();
     //declare game object
     Game game;
     game.n=0;
@@ -331,7 +342,22 @@ int check_keys(XEvent *e, Game *game)
     }
     return 0;
 }
-
+void create_sounds() {
+#ifdef USE_SOUND
+    if(fmod_init()) {
+	printf("ERROR");
+	return;
+    }
+	if(fmod_createsound((char *)"./sounds/Highly_Suspicious.mp3", 0)) {
+	    printf("ERROR");
+	    return;
+	}
+	fmod_setmode(0, FMOD_LOOP_NORMAL);
+#endif
+    }
+void play() {
+    fmod_playsound(0);
+}
 void movement(Game *game)
 {
     Character *p;

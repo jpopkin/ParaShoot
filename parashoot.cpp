@@ -28,8 +28,11 @@ bool size_flag = false;//Structures
 bool start_flag = true;
 
 Ppmimage *skyImage = NULL;
+Ppmimage *characterImage = NULL;
 GLuint skyTexture;
+GLuint characterTexture;
 int sky = 1;
+int character = 1;
 
 struct Vec {
     float x, y, z;
@@ -236,8 +239,10 @@ void init_opengl(void)
     //load the images file into a ppm structure
     //
     skyImage = ppm6GetImage("./images/Sky.ppm");
+    characterImage = ppm6GetImage("./images/character.ppm");
     //create opengl texture elements
     glGenTextures(1, &skyTexture);
+    glGenTextures(1, &characterTexture);
     //
     //sky
     glBindTexture(GL_TEXTURE_2D, skyTexture);
@@ -245,6 +250,14 @@ void init_opengl(void)
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
     glTexImage2D(GL_TEXTURE_2D, 0, 3, skyImage->width, skyImage->height,
             0, GL_RGB, GL_UNSIGNED_BYTE, skyImage->data);
+    //
+    //character
+    glBindTexture(GL_TEXTURE_2D, characterTexture);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, 3, characterImage->width,
+        characterImage->height, 0, GL_RGB, GL_UNSIGNED_BYTE,
+            characterImage->data);
 }
 
 void check_resize(Game *game, XEvent *e)
@@ -379,15 +392,16 @@ void render(Game *game)
         float w, h;
         //draw character here
         glPushMatrix();
-        glColor3ub(125,0,220);
+        //glColor3ub(125,0,220);
         Vec *c = &game->particle.s.center;
-        w = 12;
-        h = 12;
+        w = 49;
+        h = 79;
+        glBindTexture(GL_TEXTURE_2D, characterTexture);
         glBegin(GL_QUADS);
-        glVertex2i(c->x-w, c->y-h);
-        glVertex2i(c->x-w, c->y+h);
-        glVertex2i(c->x+w, c->y+h);
-        glVertex2i(c->x+w, c->y-h);
+        glTexCoord2f(0.0f, 1.0f); glVertex2i(c->x-w, c->y-h);
+        glTexCoord2f(0.0f, 0.0f); glVertex2i(c->x-w, c->y+h);
+        glTexCoord2f(0.5f, 0.0f); glVertex2i(c->x+w, c->y+h);
+        glTexCoord2f(0.5f, 1.0f); glVertex2i(c->x+w, c->y-h);
         glEnd();
         glPopMatrix();
     }

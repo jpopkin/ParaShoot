@@ -396,26 +396,26 @@ void movement(Game *game)
 
     //check for off-screen
     /*
-    if (p->s.center.y < 0.0) {
-        game->n = 0;
-    }
-    if(size_flag == true){
-        if(p->s.center.x < 0.0){
-            p->s.center.x += xres;
-        }
-        else if(p->s.center.x > xres) {
-            p->s.center.x -= xres;
-        }
-    }
-    else if(size_flag == false){
-        if(p->s.center.x < 0.0) {
-            p->s.center.x += WINDOW_WIDTH;
-        }
-        else if(p->s.center.x > WINDOW_WIDTH) {
-            p->s.center.x -= WINDOW_WIDTH;
-        }
-    }
-    */
+       if (p->s.center.y < 0.0) {
+       game->n = 0;
+       }
+       if(size_flag == true){
+       if(p->s.center.x < 0.0){
+       p->s.center.x += xres;
+       }
+       else if(p->s.center.x > xres) {
+       p->s.center.x -= xres;
+       }
+       }
+       else if(size_flag == false){
+       if(p->s.center.x < 0.0) {
+       p->s.center.x += WINDOW_WIDTH;
+       }
+       else if(p->s.center.x > WINDOW_WIDTH) {
+       p->s.center.x -= WINDOW_WIDTH;
+       }
+       }
+     */
     //Take saved matrix off the stack and reset it
     //glMatrixMode(GL_MODELVIEW);
     //glPopMatrix();
@@ -451,9 +451,6 @@ void render(Game *game)
             glTexCoord2f(1.0f, 1.0f); glVertex2i(xres, ybottom);
             glEnd();
         }
-        glPopMatrix();
-        glPushMatrix();
-        //glTranslatef(0.f, gCameraY, 0.f);
         glBindTexture(GL_TEXTURE_2D, characterTexture);
         glBegin(GL_QUADS);
         glTexCoord2f(0.0f, 1.0f); glVertex2i(c->x-w, c->y-h);
@@ -461,6 +458,16 @@ void render(Game *game)
         glTexCoord2f(0.5f, 0.0f); glVertex2i(c->x+w, c->y+h);
         glTexCoord2f(0.5f, 1.0f); glVertex2i(c->x+w, c->y-h);
         glEnd();
+        if (game->altitude < 11400 && game->altitude > 10600) {
+            Rect r;
+            r.left = xres/2 + 200;
+            r.bot = 11000 - 400;
+            r.center = xres/2 + 200;
+            r.width = 500;
+            r.height = 100;
+            ggprint16(&r, 16, 0xdd4814, "11,000ft");
+        }
+        //std::cout << game->altitude << std::endl;
 
         glPopMatrix();
     }

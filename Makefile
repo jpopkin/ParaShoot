@@ -1,6 +1,6 @@
 CFLAGS = -I ./include
 LIB    = ./lib/fmod/libfmodex64.so ./libggfonts.so
-LFLAGS = $(LIB) -lrt -lX11 -lGL -pthread -lm #-lXrandr
+LFLAGS = $(LIB) -lrt -lX11 -lGL -lGLU -pthread -lm #-lXrandr
 
 all: parashoot
 

@@ -7,6 +7,8 @@
 #include <X11/keysym.h>
 #include <GL/glx.h>
 #include <GL/gl.h>
+#include <GL/glu.h>
+#include <GL/glut.h>
 #include <X11/Xutil.h>
 #include "log.h"
 #include "ppm.h"
@@ -31,8 +33,11 @@ Window win;
 GLXContext glc;
 
 int xres = WINDOW_WIDTH , yres = WINDOW_HEIGHT;
-bool size_flag = false;//Structures
+bool size_flag = false;
 bool start_flag = true;
+
+//Camera position
+GLfloat gCameraY = 0.0f;
 
 Ppmimage *skyImage = NULL;
 Ppmimage *characterImage = NULL;
@@ -60,6 +65,11 @@ struct Game {
     Shape box;
     Character character;
     int n;
+    float altitude;
+    Game() {
+        altitude = 12000.f;
+        n = 0;
+    }
 };
 
 
@@ -102,7 +112,6 @@ int main(void)
     play();
     //declare game object
     Game game;
-    game.n=0;
     clock_gettime(CLOCK_REALTIME, &timePause);
     clock_gettime(CLOCK_REALTIME, &timeStart);
 
@@ -228,18 +237,23 @@ void init_opengl(void)
     //OpenGL initialization
     glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
     //Initialize matrices
-    glMatrixMode(GL_PROJECTION); glLoadIdentity();
-    glMatrixMode(GL_MODELVIEW); glLoadIdentity();
+    glMatrixMode(GL_PROJECTION); 
+    glLoadIdentity();
     //Set 2D mode (no perspective)
-    glOrtho(0, WINDOW_WIDTH, 0, WINDOW_HEIGHT, -1, 1);
+    glOrtho(0, WINDOW_WIDTH, 11200, 12000, -1, 1);
+    //glOrtho(0, WINDOW_WIDTH, 0, WINDOW_HEIGHT, -1, 1);
+    glMatrixMode(GL_MODELVIEW); 
+    glLoadIdentity();
+    //glDisable(GL_LIGHTING);
+    //glDisable(GL_DEPTH_TEST);
+    //glDisable(GL_FOG);
+    //glDisable(GL_CULL_FACE);
 
-    glDisable(GL_LIGHTING);
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_FOG);
-    glDisable(GL_CULL_FACE);
-
+    //Save the default modelview matrix
+    glPushMatrix();
     //Set the screen background color
-    glClearColor(0.1, 0.5, 1.0, 1.0);
+    //glClearColor(0.1, 0.5, 1.0, 1.0);
+    glClearColor(0.f, 0.f, 0.f, 1.f);
     glEnable(GL_TEXTURE_2D);
     initialize_fonts();
     //
@@ -263,7 +277,7 @@ void init_opengl(void)
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
     glTexImage2D(GL_TEXTURE_2D, 0, 3, characterImage->width,
-        characterImage->height, 0, GL_RGB, GL_UNSIGNED_BYTE,
+            characterImage->height, 0, GL_RGB, GL_UNSIGNED_BYTE,
             characterImage->data);
 }
 
@@ -283,10 +297,11 @@ void makeCharacter(Game *game)
     //position of character
     Character *p = &game->character;
     p->s.center.x = WINDOW_WIDTH/2;
-    p->s.center.y = WINDOW_HEIGHT/2;
+    //p->s.center.y = WINDOW_HEIGHT/2;
+    p->s.center.y = game->altitude - 400;
     p->velocity.y = 0;
     p->velocity.x = 0;
-    //game->n++;
+    game->n++;
     start_flag = false;
 }
 
@@ -335,29 +350,33 @@ int check_keys(XEvent *e, Game *game)
     if (e->type == KeyPress) {
         int key = XLookupKeysym(&e->xkey, 0);
         if (key == XK_Left) {
-            p->s.center.x -= 16.0; }
-        else if (key == XK_Right) {
-            p->s.center.x += 16.0; }
+            p->s.center.x -= 16.0; 
+        } else if (key == XK_Right) {
+            p->s.center.x += 16.0; 
+        }
 
     }
     return 0;
 }
+
 void create_sounds() {
 #ifdef USE_SOUND
     if(fmod_init()) {
-	printf("ERROR");
-	return;
+        printf("ERROR");
+        return;
     }
-	if(fmod_createsound((char *)"./sounds/Highly_Suspicious.mp3", 0)) {
-	    printf("ERROR");
-	    return;
-	}
-	fmod_setmode(0, FMOD_LOOP_NORMAL);
+    if(fmod_createsound((char *)"./sounds/Highly_Suspicious.mp3", 0)) {
+        printf("ERROR");
+        return;
+    }
+    fmod_setmode(0, FMOD_LOOP_NORMAL);
 #endif
-    }
+}
+
 void play() {
     fmod_playsound(0);
 }
+
 void movement(Game *game)
 {
     Character *p;
@@ -366,15 +385,17 @@ void movement(Game *game)
         return;
 
     p = &game->character;
-    /*p->s.center.x += p->velocity.x;
-      p->s.center.y += p->velocity.y;
-      p->s.center.y -= GRAVITY;
-     */
+    p->s.center.x += p->velocity.x;
+    p->s.center.y += p->velocity.y;
+    p->s.center.y -= GRAVITY;
+    game->altitude -= GRAVITY;
+    gCameraY += (float)GRAVITY;
     //check for collision with objects here...
     //Shape *s;
 
 
     //check for off-screen
+    /*
     if (p->s.center.y < 0.0) {
         game->n = 0;
     }
@@ -394,31 +415,45 @@ void movement(Game *game)
             p->s.center.x -= WINDOW_WIDTH;
         }
     }
+    */
+    //Take saved matrix off the stack and reset it
+    //glMatrixMode(GL_MODELVIEW);
+    //glPopMatrix();
+    //glLoadIdentity();
+    //Move camera to position
+    //glTranslatef(0.0f, -gCameraY, 0.0f);
+    //Save default matrix again with camera translation
+    //glPushMatrix();
 }
 
 void render(Game *game)
 {
-    //glClearColor(1.0, 1.0, 1.0, 1.0);
-    glClear(GL_COLOR_BUFFER_BIT);
-    glColor3f(1.0, 1.0, 1.0);
-    if (sky) {
-        glBindTexture(GL_TEXTURE_2D, skyTexture);
-        glBegin(GL_QUADS);
-        glTexCoord2f(0.0f, 1.0f); glVertex2i(0, 0);
-        glTexCoord2f(0.0f, 0.0f); glVertex2i(0, yres);
-        glTexCoord2f(1.0f, 0.0f); glVertex2i(xres, yres);
-        glTexCoord2f(1.0f, 1.0f); glVertex2i(xres,0);
-        glEnd();
-    }
-
     if(!start_flag) {
         float w, h;
-        //draw character here
+        glClear(GL_COLOR_BUFFER_BIT);
+        //Pop default matrix onto current matrix
+        glMatrixMode(GL_MODELVIEW);
+        glPopMatrix();
+        //Save default matrix again
         glPushMatrix();
-        //glColor3ub(125,0,220);
+        glTranslatef(0.f, gCameraY, 0.f);
         Vec *c = &game->character.s.center;
         w = 49;
         h = 79;
+        glColor3f(1.0, 1.0, 1.0);
+        if (sky) {
+            glBindTexture(GL_TEXTURE_2D, skyTexture);
+            glBegin(GL_QUADS);
+            int ybottom = game->altitude - 800;
+            glTexCoord2f(0.0f, 1.0f); glVertex2i(0, ybottom);
+            glTexCoord2f(0.0f, 0.0f); glVertex2i(0, game->altitude);
+            glTexCoord2f(1.0f, 0.0f); glVertex2i(xres, game->altitude);
+            glTexCoord2f(1.0f, 1.0f); glVertex2i(xres, ybottom);
+            glEnd();
+        }
+        glPopMatrix();
+        glPushMatrix();
+        //glTranslatef(0.f, gCameraY, 0.f);
         glBindTexture(GL_TEXTURE_2D, characterTexture);
         glBegin(GL_QUADS);
         glTexCoord2f(0.0f, 1.0f); glVertex2i(c->x-w, c->y-h);
@@ -426,32 +461,49 @@ void render(Game *game)
         glTexCoord2f(0.5f, 0.0f); glVertex2i(c->x+w, c->y+h);
         glTexCoord2f(0.5f, 1.0f); glVertex2i(c->x+w, c->y-h);
         glEnd();
+
         glPopMatrix();
     }
 
     if(start_flag) {
+        glClear(GL_COLOR_BUFFER_BIT);
+        glMatrixMode(GL_MODELVIEW);
+        glPopMatrix();
+        glPushMatrix();
+        glColor3f(1.0, 1.0, 1.0);
+        if (sky) {
+            glBindTexture(GL_TEXTURE_2D, skyTexture);
+            glBegin(GL_QUADS);
+            int ybottom = game->altitude - 800;
+            glTexCoord2f(0.0f, 1.0f); glVertex2i(0, ybottom);
+            glTexCoord2f(0.0f, 0.0f); glVertex2i(0, game->altitude);
+            glTexCoord2f(1.0f, 0.0f); glVertex2i(xres, game->altitude);
+            glTexCoord2f(1.0f, 1.0f); glVertex2i(xres, ybottom);
+            glEnd();
+        }
+
         Rect start;
         Rect click;
 
         start.centerx = xres/2;
-        start.centery = yres/2 + 200;
-        start.bot = yres/2 + 200;
+        start.centery = game->altitude - 200;
+        start.bot = game->altitude - 200;
         start.width = 500;
         start.height = 100;
         start.center = xres/2 + 200;
         start.left = start.centerx;
         start.right = start.centerx;
-        start.top = yres/2 + 200;
+        start.top = game->altitude - 200;
 
         click.centerx = xres/2;
-        click.centery = yres/2;
-        click.bot = yres/2;
+        click.centery = game->altitude - 400;
+        click.bot = game->altitude - 400;
         click.width = 500;
         click.height = 100;
         click.center = xres/2;
         click.left = click.centerx;
         click.right = click.centerx;
-        click.top = yres/2;
+        click.top = game->altitude - 400;
 
         ggprint16(&start, 1000, 0x00fff000, "PARASHOOT!");
         ggprint16(&click, 1000, 0x00fff000, "Click to start");

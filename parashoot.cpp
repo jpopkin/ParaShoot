@@ -8,7 +8,6 @@
 #include <GL/glx.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
-#include <GL/glut.h>
 #include <X11/Xutil.h>
 #include "log.h"
 #include "ppm.h"

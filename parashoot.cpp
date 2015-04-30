@@ -3,6 +3,7 @@
 #include <ctime>
 #include <cstring>
 #include <cmath>
+#include <string>
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
 #include <GL/glx.h>
@@ -66,8 +67,8 @@ struct Game {
     int n;
     float altitude;
     Game() {
-        altitude = 12000.f;
-        n = 0;
+	altitude = 12000.f;
+	n = 0;
     }
 };
 
@@ -94,7 +95,7 @@ double physicsCountdown=0.0;
 double timeSpan=0.0;
 double timeDiff(struct timespec *start, struct timespec *end) {
     return (double)(end->tv_sec - start->tv_sec ) +
-        (double)(end->tv_nsec - start->tv_nsec) * oobillion;
+	(double)(end->tv_nsec - start->tv_nsec) * oobillion;
 }
 void timeCopy(struct timespec *dest, struct timespec *source) {
     memcpy(dest, source, sizeof(struct timespec));
@@ -116,23 +117,23 @@ int main(void)
 
     //start animation
     while(!done) {
-        while(XPending(dpy)) {
-            XEvent e;
-            XNextEvent(dpy, &e);
-            check_mouse(&e, &game);
-            check_resize(&game, &e);
-            done = check_keys(&e, &game);
-        }
-        clock_gettime(CLOCK_REALTIME, &timeCurrent);
-        timeSpan = timeDiff(&timeStart, &timeCurrent);
-        timeCopy(&timeStart, &timeCurrent);
-        physicsCountdown += timeSpan;
-        while(physicsCountdown >= physicsRate) {
-            movement(&game);
-            physicsCountdown -= physicsRate;
-        }
-        render(&game);
-        glXSwapBuffers(dpy, win);
+	while(XPending(dpy)) {
+	    XEvent e;
+	    XNextEvent(dpy, &e);
+	    check_mouse(&e, &game);
+	    check_resize(&game, &e);
+	    done = check_keys(&e, &game);
+	}
+	clock_gettime(CLOCK_REALTIME, &timeCurrent);
+	timeSpan = timeDiff(&timeStart, &timeCurrent);
+	timeCopy(&timeStart, &timeCurrent);
+	physicsCountdown += timeSpan;
+	while(physicsCountdown >= physicsRate) {
+	    movement(&game);
+	    physicsCountdown -= physicsRate;
+	}
+	render(&game);
+	glXSwapBuffers(dpy, win);
     }
     cleanupXWindows();
     cleanup_fonts();
@@ -164,23 +165,23 @@ void initXWindows(void) {
     int w=WINDOW_WIDTH, h=WINDOW_HEIGHT;
     dpy = XOpenDisplay(NULL);
     if (dpy == NULL) {  std::cout << "\n\tcannot connect to X server\n" << std::endl;
-        exit(EXIT_FAILURE);
+	exit(EXIT_FAILURE);
     }
     Window root = DefaultRootWindow(dpy);
     XVisualInfo *vi = glXChooseVisual(dpy, 0, att);
     if(vi == NULL) {
-        std::cout << "\n\tno appropriate visual found\n" << std::endl;
-        exit(EXIT_FAILURE);
+	std::cout << "\n\tno appropriate visual found\n" << std::endl;
+	exit(EXIT_FAILURE);
     }
     Colormap cmap = XCreateColormap(dpy, root, vi->visual, AllocNone);
     XSetWindowAttributes swa;
     swa.colormap = cmap;
     swa.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask |
-        ButtonPress | ButtonReleaseMask |
-        PointerMotionMask |
-        StructureNotifyMask | SubstructureNotifyMask;
+	ButtonPress | ButtonReleaseMask |
+	PointerMotionMask |
+	StructureNotifyMask | SubstructureNotifyMask;
     win = XCreateWindow(dpy, root, 0, 0, w, h, 0, vi->depth,
-            InputOutput, vi->visual, CWColormap | CWEventMask, &swa);
+	    InputOutput, vi->visual, CWColormap | CWEventMask, &swa);
     set_title();
     glc = glXCreateContext(dpy, vi, NULL, GL_TRUE);
     glXMakeCurrent(dpy, win, glc);
@@ -215,18 +216,18 @@ unsigned char *buildAlphaData(Ppmimage *img)
     newdata = new unsigned char[img->width * img->height * 4];
     ptr = newdata;
     for (int i=0; i<img->width * img->height * 3; i+=3) {
-        a = *(data+0);
-        b = *(data+1);
-        c = *(data+2);
-        *(ptr+0) = a;
-        *(ptr+1) = b;
-        *(ptr+2) = c;
-        //
-        //new code, suggested by Chris Smith, Fall 2013
-        *(ptr+3) = (a|b|c);
-        //
-        ptr += 4;
-        data += 3;
+	a = *(data+0);
+	b = *(data+1);
+	c = *(data+2);
+	*(ptr+0) = a;
+	*(ptr+1) = b;
+	*(ptr+2) = c;
+	//
+	//new code, suggested by Chris Smith, Fall 2013
+	*(ptr+3) = (a|b|c);
+	//
+	ptr += 4;
+	data += 3;
     }
     return newdata;
 }
@@ -258,7 +259,7 @@ void init_opengl(void)
     //
     //load the images file into a ppm structure
     //
-    skyImage = ppm6GetImage("./images/Sky.ppm");
+    skyImage = ppm6GetImage("./images/Sunset.ppm");
     characterImage = ppm6GetImage("./images/character.ppm");
     //create opengl texture elements
     glGenTextures(1, &skyTexture);
@@ -269,25 +270,25 @@ void init_opengl(void)
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
     glTexImage2D(GL_TEXTURE_2D, 0, 3, skyImage->width, skyImage->height,
-            0, GL_RGB, GL_UNSIGNED_BYTE, skyImage->data);
+	    0, GL_RGB, GL_UNSIGNED_BYTE, skyImage->data);
     //
     //character
     glBindTexture(GL_TEXTURE_2D, characterTexture);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
     glTexImage2D(GL_TEXTURE_2D, 0, 3, characterImage->width,
-            characterImage->height, 0, GL_RGB, GL_UNSIGNED_BYTE,
-            characterImage->data);
+	    characterImage->height, 0, GL_RGB, GL_UNSIGNED_BYTE,
+	    characterImage->data);
 }
 
 void check_resize(Game *game, XEvent *e)
 {
     if(e->type != ConfigureNotify)
-        return;
+	return;
 
     XConfigureEvent xce = e->xconfigure;
     if(xce.width != xres || xce.height != yres) {
-        reshape_window(game, xce.width, xce.height);
+	reshape_window(game, xce.width, xce.height);
     }
 }
 
@@ -311,26 +312,26 @@ void check_mouse(XEvent *e, Game *game)
     static int n = 0;
 
     if (e->type == ButtonRelease) {
-        return;
+	return;
     }
     if (e->type == ButtonPress) {
-        if (e->xbutton.button==1) {
-            //Left button was pressed
-            if(start_flag)
-                makeCharacter(game);
-            return;
-        }
-        if (e->xbutton.button==3) {
-            //Right button was pressed
-            return;
-        }
+	if (e->xbutton.button==1) {
+	    //Left button was pressed
+	    if(start_flag)
+		makeCharacter(game);
+	    return;
+	}
+	if (e->xbutton.button==3) {
+	    //Right button was pressed
+	    return;
+	}
     }
     //Did the mouse move?
     if (savex != e->xbutton.x || savey != e->xbutton.y) {
-        savex = e->xbutton.x;
-        savey = e->xbutton.y;
-        if (++n < 10)
-            return;
+	savex = e->xbutton.x;
+	savey = e->xbutton.y;
+	if (++n < 10)
+	    return;
     }
 }
 
@@ -339,20 +340,20 @@ int check_keys(XEvent *e, Game *game)
     Character *p;
     //Was there input from the keyboard?
     if (e->type == KeyPress) {
-        int key = XLookupKeysym(&e->xkey, 0);
-        if (key == XK_Escape) {
-            return 1;
-        }
+	int key = XLookupKeysym(&e->xkey, 0);
+	if (key == XK_Escape) {
+	    return 1;
+	}
     }
     p = &game->character;
     //You may check other keys here.
     if (e->type == KeyPress) {
-        int key = XLookupKeysym(&e->xkey, 0);
-        if (key == XK_Left) {
-            p->s.center.x -= 16.0; 
-        } else if (key == XK_Right) {
-            p->s.center.x += 16.0; 
-        }
+	int key = XLookupKeysym(&e->xkey, 0);
+	if (key == XK_Left) {
+	    p->s.center.x -= 16.0; 
+	} else if (key == XK_Right) {
+	    p->s.center.x += 16.0; 
+	}
 
     }
     return 0;
@@ -361,12 +362,12 @@ int check_keys(XEvent *e, Game *game)
 void create_sounds() {
 #ifdef USE_SOUND
     if(fmod_init()) {
-        printf("ERROR");
-        return;
+	printf("ERROR");
+	return;
     }
     if(fmod_createsound((char *)"./sounds/Highly_Suspicious.mp3", 0)) {
-        printf("ERROR");
-        return;
+	printf("ERROR");
+	return;
     }
     fmod_setmode(0, FMOD_LOOP_NORMAL);
 #endif
@@ -381,7 +382,7 @@ void movement(Game *game)
     Character *p;
 
     if (game->n <= 0)
-        return;
+	return;
 
     p = &game->character;
     p->s.center.x += p->velocity.x;
@@ -414,104 +415,102 @@ void movement(Game *game)
        p->s.center.x -= WINDOW_WIDTH;
        }
        }
-     */
-    //Take saved matrix off the stack and reset it
-    //glMatrixMode(GL_MODELVIEW);
-    //glPopMatrix();
-    //glLoadIdentity();
-    //Move camera to position
-    //glTranslatef(0.0f, -gCameraY, 0.0f);
-    //Save default matrix again with camera translation
-    //glPushMatrix();
+       */
 }
 
 void render(Game *game)
 {
     if(!start_flag) {
-        float w, h;
-        glClear(GL_COLOR_BUFFER_BIT);
-        //Pop default matrix onto current matrix
-        glMatrixMode(GL_MODELVIEW);
-        glPopMatrix();
-        //Save default matrix again
-        glPushMatrix();
-        glTranslatef(0.f, gCameraY, 0.f);
-        Vec *c = &game->character.s.center;
-        w = 49;
-        h = 79;
-        glColor3f(1.0, 1.0, 1.0);
-        if (sky) {
-            glBindTexture(GL_TEXTURE_2D, skyTexture);
-            glBegin(GL_QUADS);
-            int ybottom = game->altitude - 800;
-            glTexCoord2f(0.0f, 1.0f); glVertex2i(0, ybottom);
-            glTexCoord2f(0.0f, 0.0f); glVertex2i(0, game->altitude);
-            glTexCoord2f(1.0f, 0.0f); glVertex2i(xres, game->altitude);
-            glTexCoord2f(1.0f, 1.0f); glVertex2i(xres, ybottom);
-            glEnd();
-        }
-        glBindTexture(GL_TEXTURE_2D, characterTexture);
-        glBegin(GL_QUADS);
-        glTexCoord2f(0.0f, 1.0f); glVertex2i(c->x-w, c->y-h);
-        glTexCoord2f(0.0f, 0.0f); glVertex2i(c->x-w, c->y+h);
-        glTexCoord2f(0.5f, 0.0f); glVertex2i(c->x+w, c->y+h);
-        glTexCoord2f(0.5f, 1.0f); glVertex2i(c->x+w, c->y-h);
-        glEnd();
-        if (game->altitude < 11400 && game->altitude > 10600) {
-            Rect r;
-            r.left = xres/2 + 200;
-            r.bot = 11000 - 400;
-            r.center = xres/2 + 200;
-            r.width = 500;
-            r.height = 100;
-            ggprint16(&r, 16, 0xdd4814, "11,000ft");
-        }
-        //std::cout << game->altitude << std::endl;
+	float w, h;
+	glClear(GL_COLOR_BUFFER_BIT);
+	//Pop default matrix onto current matrix
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+	//Save default matrix again
+	glPushMatrix();
+	glTranslatef(0.f, gCameraY, 0.f);
+	Vec *c = &game->character.s.center;
+	w = 49;
+	h = 79;
+	glColor3f(1.0, 1.0, 1.0);
+	if (sky) {
+	    glBindTexture(GL_TEXTURE_2D, skyTexture);
+	    glBegin(GL_QUADS);
+	    int ybottom = game->altitude - 800;
+	    glTexCoord2f(0.0f, 1.0f); glVertex2i(0, ybottom);
+	    glTexCoord2f(0.0f, 0.0f); glVertex2i(0, game->altitude);
+	    glTexCoord2f(1.0f, 0.0f); glVertex2i(xres, game->altitude);
+	    glTexCoord2f(1.0f, 1.0f); glVertex2i(xres, ybottom);
+	    glEnd();
+	}
+	glBindTexture(GL_TEXTURE_2D, characterTexture);
+	glBegin(GL_QUADS);
+	glTexCoord2f(0.0f, 1.0f); glVertex2i(c->x-w, c->y-h);
+	glTexCoord2f(0.0f, 0.0f); glVertex2i(c->x-w, c->y+h);
+	glTexCoord2f(0.5f, 0.0f); glVertex2i(c->x+w, c->y+h);
+	glTexCoord2f(0.5f, 1.0f); glVertex2i(c->x+w, c->y-h);
+	glEnd();
+	int i = 12000;
+	while (i > 0) {
+	    if ((game->altitude < (i + 400)) && (game->altitude > (i - 400))) {
+		Rect r;
+		char cstr[10];
+		r.left = xres/2 + 200;
+		r.bot = i - 400;
+		r.center = xres/2 + 200;
+		r.width = 500;
+		r.height = 100;
+		sprintf (cstr, "%d", i);
+		strcat (cstr, "ft");
+		ggprint16(&r, 16, 0xdd4814, "%s", cstr);
+	    }
+	    i = i - 100;
+	}
 
-        glPopMatrix();
+	glPopMatrix();
     }
 
     if(start_flag) {
-        glClear(GL_COLOR_BUFFER_BIT);
-        glMatrixMode(GL_MODELVIEW);
-        glPopMatrix();
-        glPushMatrix();
-        glColor3f(1.0, 1.0, 1.0);
-        if (sky) {
-            glBindTexture(GL_TEXTURE_2D, skyTexture);
-            glBegin(GL_QUADS);
-            int ybottom = game->altitude - 800;
-            glTexCoord2f(0.0f, 1.0f); glVertex2i(0, ybottom);
-            glTexCoord2f(0.0f, 0.0f); glVertex2i(0, game->altitude);
-            glTexCoord2f(1.0f, 0.0f); glVertex2i(xres, game->altitude);
-            glTexCoord2f(1.0f, 1.0f); glVertex2i(xres, ybottom);
-            glEnd();
-        }
+	glClear(GL_COLOR_BUFFER_BIT);
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+	glPushMatrix();
+	glColor3f(1.0, 1.0, 1.0);
+	if (sky) {
+	    glBindTexture(GL_TEXTURE_2D, skyTexture);
+	    glBegin(GL_QUADS);
+	    int ybottom = game->altitude - 800;
+	    glTexCoord2f(0.0f, 1.0f); glVertex2i(0, ybottom);
+	    glTexCoord2f(0.0f, 0.0f); glVertex2i(0, game->altitude);
+	    glTexCoord2f(1.0f, 0.0f); glVertex2i(xres, game->altitude);
+	    glTexCoord2f(1.0f, 1.0f); glVertex2i(xres, ybottom);
+	    glEnd();
+	}
 
-        Rect start;
-        Rect click;
+	Rect start;
+	Rect click;
 
-        start.centerx = xres/2;
-        start.centery = game->altitude - 200;
-        start.bot = game->altitude - 200;
-        start.width = 500;
-        start.height = 100;
-        start.center = xres/2 + 200;
-        start.left = start.centerx;
-        start.right = start.centerx;
-        start.top = game->altitude - 200;
+	start.centerx = xres/2;
+	start.centery = game->altitude - 200;
+	start.bot = game->altitude - 200;
+	start.width = 500;
+	start.height = 100;
+	start.center = xres/2 + 200;
+	start.left = start.centerx;
+	start.right = start.centerx;
+	start.top = game->altitude - 200;
 
-        click.centerx = xres/2;
-        click.centery = game->altitude - 400;
-        click.bot = game->altitude - 400;
-        click.width = 500;
-        click.height = 100;
-        click.center = xres/2;
-        click.left = click.centerx;
-        click.right = click.centerx;
-        click.top = game->altitude - 400;
+	click.centerx = xres/2;
+	click.centery = game->altitude - 400;
+	click.bot = game->altitude - 400;
+	click.width = 500;
+	click.height = 100;
+	click.center = xres/2;
+	click.left = click.centerx;
+	click.right = click.centerx;
+	click.top = game->altitude - 400;
 
-        ggprint16(&start, 1000, 0x00fff000, "PARASHOOT!");
-        ggprint16(&click, 1000, 0x00fff000, "Click to start");
+	ggprint16(&start, 1000, 0x00fff000, "PARASHOOT!");
+	ggprint16(&click, 1000, 0x00fff000, "Click to start");
     }
 }

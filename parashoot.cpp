@@ -45,6 +45,7 @@ GLuint skyTexture;
 GLuint characterTexture;
 int sky = 1;
 int character = 1;
+int keys[65536];
 
 struct Vec {
     float x, y, z;
@@ -78,13 +79,13 @@ void initXWindows(void);
 void init_opengl(void);
 void cleanupXWindows(void);
 void check_mouse(XEvent *e, Game *game);
-int check_keys(XEvent *e, Game *game);
+int check_keys(XEvent *e);
 void movement(Game *game);
 void render(Game *game);
 void check_resize(Game *game, XEvent *e);
 void create_sounds();
 void play();
-
+void init_keys();
 //-----------------------------------------------------------------------------
 //Setup timers
 const double physicsRate = 1.0 / 30.0;
@@ -112,6 +113,7 @@ int main(void)
     play();
     //declare game object
     Game game;
+    init_keys();
     clock_gettime(CLOCK_REALTIME, &timePause);
     clock_gettime(CLOCK_REALTIME, &timeStart);
 
@@ -122,7 +124,7 @@ int main(void)
 	    XNextEvent(dpy, &e);
 	    check_mouse(&e, &game);
 	    check_resize(&game, &e);
-	    done = check_keys(&e, &game);
+	    done = check_keys(&e);
 	}
 	clock_gettime(CLOCK_REALTIME, &timeCurrent);
 	timeSpan = timeDiff(&timeStart, &timeCurrent);
@@ -335,29 +337,73 @@ void check_mouse(XEvent *e, Game *game)
     }
 }
 
-int check_keys(XEvent *e, Game *game)
-{
-    Character *p;
-    //Was there input from the keyboard?
-    if (e->type == KeyPress) {
-	int key = XLookupKeysym(&e->xkey, 0);
-	if (key == XK_Escape) {
-	    return 1;
-	}
-    }
-    p = &game->character;
-    //You may check other keys here.
-    if (e->type == KeyPress) {
-	int key = XLookupKeysym(&e->xkey, 0);
-	if (key == XK_Left) {
-	    p->s.center.x -= 16.0; 
-	} else if (key == XK_Right) {
-	    p->s.center.x += 16.0; 
-	}
+void init_keys() {
+    memset(keys, 0, 65536);
+}
 
+int check_keys(XEvent *e)
+{
+    //keyboard input?
+    static int shift=0;
+    int key = XLookupKeysym(&e->xkey, 0);
+    //Log("key: %i\n", key);
+    if (e->type == KeyRelease) {
+	keys[key]=0;
+	if (key == XK_Shift_L || key == XK_Shift_R)
+	    shift=0;
+	return 0;
+    }
+    if (e->type == KeyPress) {
+	keys[key]=1;
+	if (key == XK_Shift_L || key == XK_Shift_R) {
+	    shift=1;
+	    return 0;
+	}
+    } else {
+	return 0;
+    }
+    if (shift){}
+    switch(key) {
+	case XK_Escape:
+	    return 1;
+	case XK_f:
+	    break;
+	case XK_s:
+	    break;
+	case XK_Down:
+	    break;
+	case XK_equal:
+	    break;
+	case XK_minus:
+	    break;
     }
     return 0;
 }
+/*
+   int check_keys(XEvent *e, Game *game)
+   {
+   Character *p;
+//Was there input from the keyboard?
+if (e->type == KeyPress) {
+int key = XLookupKeysym(&e->xkey, 0);
+if (key == XK_Escape) {
+return 1;
+}
+}
+p = &game->character;
+//You may check other keys here.
+if (e->type == KeyPress) {
+int key = XLookupKeysym(&e->xkey, 0);
+if (key == XK_Left) {
+p->s.center.x -= 16.0; 
+} else if (key == XK_Right) {
+p->s.center.x += 16.0; 
+}
+
+}
+return 0;
+}
+*/
 
 void create_sounds() {
 #ifdef USE_SOUND
@@ -392,7 +438,12 @@ void movement(Game *game)
     gCameraY += (float)GRAVITY;
     //check for collision with objects here...
     //Shape *s;
-
+    if (keys[XK_Right]) {
+	p->velocity.x += 2;
+    }
+    if (keys[XK_Left]) {
+	p->velocity.x += -2;
+    }
 
     //check for off-screen
     /*

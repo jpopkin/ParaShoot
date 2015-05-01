@@ -510,7 +510,7 @@ void render(Game *game)
 	glClear(GL_COLOR_BUFFER_BIT);
 	//Pop default matrix onto current matrix
 	glMatrixMode(GL_MODELVIEW);
-	glPopMatrix();
+	//glPopMatrix();
 	//Save default matrix again
 	glPushMatrix();
 	glTranslatef(0.f, gCameraY, 0.f);
@@ -534,10 +534,18 @@ void render(Game *game)
 	glAlphaFunc(GL_GREATER, 0.0f);
 	glColor4ub(255,255,255,255);
 	glBegin(GL_QUADS);
-	glTexCoord2f(0.0f, 1.0f); glVertex2i(c->x-w, c->y-h);
-	glTexCoord2f(0.0f, 0.0f); glVertex2i(c->x-w, c->y+h);
-	glTexCoord2f(0.5f, 0.0f); glVertex2i(c->x+w, c->y+h);
-	glTexCoord2f(0.5f, 1.0f); glVertex2i(c->x+w, c->y-h);
+	if (game->character.velocity.x < 0) {
+		glTexCoord2f(0.0f, 1.0f); glVertex2i(c->x-w, c->y-h);
+		glTexCoord2f(0.0f, 0.0f); glVertex2i(c->x-w, c->y+h);
+		glTexCoord2f(0.5f, 0.0f); glVertex2i(c->x+w, c->y+h);
+		glTexCoord2f(0.5f, 1.0f); glVertex2i(c->x+w, c->y-h);
+	}
+	if (game->character.velocity.x >= 0) {
+		glTexCoord2f(0.5f, 1.0f); glVertex2i(c->x-w, c->y-h);
+		glTexCoord2f(0.5f, 0.0f); glVertex2i(c->x-w, c->y+h);
+		glTexCoord2f(1.0f, 0.0f); glVertex2i(c->x+w, c->y+h);
+		glTexCoord2f(1.0f, 1.0f); glVertex2i(c->x+w, c->y-h);
+	}	
 	glEnd();
 	int i = 12000;
 	while (i > 0) {
@@ -562,7 +570,7 @@ void render(Game *game)
     if(start_flag) {
 	glClear(GL_COLOR_BUFFER_BIT);
 	glMatrixMode(GL_MODELVIEW);
-	glPopMatrix();
+	//glPopMatrix();
 	glPushMatrix();
 	glColor3f(1.0, 1.0, 1.0);
 	if (sky) {
@@ -575,6 +583,7 @@ void render(Game *game)
 	    glTexCoord2f(1.0f, 1.0f); glVertex2i(xres, ybottom);
 	    glEnd();
 	}
+	glPopMatrix();
 
 	Rect start;
 	Rect click;

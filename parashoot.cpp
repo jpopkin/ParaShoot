@@ -17,6 +17,7 @@ extern "C" {
 }
 #define WINDOW_WIDTH  800
 #define WINDOW_HEIGHT 800
+#define STARTING_ALTITUDE 12000
 #define MAX_PARTICLES 1
 #define GRAVITY 3.0
 #define USE_SOUND
@@ -69,7 +70,7 @@ struct Game {
     int n;
     float altitude;
     Game() {
-	altitude = 12000.f;
+	altitude = (float)STARTING_ALTITUDE;
 	n = 0;
     }
 };
@@ -77,7 +78,7 @@ struct Game {
 
 //Function prototypes
 void initXWindows(void);
-void init_opengl(void);
+void init_opengl(Game *game);
 void cleanupXWindows(void);
 void check_mouse(XEvent *e, Game *game);
 int check_keys(XEvent *e);
@@ -109,11 +110,11 @@ int main(void)
     int done=0;
     srand(time(NULL));
     initXWindows();
-    init_opengl();
+    Game game;
+    init_opengl(&game);
     create_sounds();
     play();
     //declare game object
-    Game game;
     init_keys();
     clock_gettime(CLOCK_REALTIME, &timePause);
     clock_gettime(CLOCK_REALTIME, &timeStart);
@@ -198,15 +199,13 @@ void reshape_window(Game *game, int width, int height)
     size_flag = true;
     setup_screen_res(width, height);
     p->s.center.x = width/2;
-    p->s.center.y = game->altitude - 400;
+    p->s.center.y = (game->altitude - height) / 2;
     glViewport(0,0, (GLint)width, (GLint)height);
     glMatrixMode(GL_PROJECTION); glLoadIdentity();
     glMatrixMode(GL_MODELVIEW); glLoadIdentity();
     //glOrtho(0, width, 0, height, -1, 1);
     glOrtho(0, width, (game->altitude - height), game->altitude, -1, 1);
     set_title();
-    p->s.center.x = width/2;
-    p->s.center.y = game->altitude - 400;
 }
 
 
@@ -236,7 +235,7 @@ unsigned char *buildAlphaData(Ppmimage *img)
     return newdata;
 }
 
-void init_opengl(void) 
+void init_opengl(Game *game) 
 {
     //OpenGL initialization
     glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
@@ -244,7 +243,7 @@ void init_opengl(void)
     glMatrixMode(GL_PROJECTION); 
     glLoadIdentity();
     //Set 2D mode (no perspective)
-    glOrtho(0, WINDOW_WIDTH, 11200, 12000, -1, 1);
+    glOrtho(0, WINDOW_WIDTH, (game->altitude - WINDOW_HEIGHT), game->altitude, -1, 1);
     //glOrtho(0, WINDOW_WIDTH, 0, WINDOW_HEIGHT, -1, 1);
     glMatrixMode(GL_MODELVIEW); 
     glLoadIdentity();
@@ -309,11 +308,9 @@ void check_resize(Game *game, XEvent *e)
 
 void makeCharacter(Game *game)
 {
-    //position of character
     Character *p = &game->character;
-    p->s.center.x = WINDOW_WIDTH/2;
-    //p->s.center.y = WINDOW_HEIGHT/2;
-    p->s.center.y = game->altitude - 400;
+    p->s.center.x = xres/2;
+    p->s.center.y = (game->altitude - (yres/2));
     p->velocity.y = 0;
     p->velocity.x = 0;
     game->n++;
@@ -466,16 +463,16 @@ void movement(Game *game)
 
     //border collision detection
     //
-    if (p->s.center.x <= xres - 746) {
+    if (p->s.center.x <= 50) {
 	p->velocity.x = 3;
     }
-    if (p->s.center.x >= xres - 54) {
+    if (p->s.center.x >= (xres - 50)) {
 	p->velocity.x = -3;
     }
-    if (p->s.center.y >= game->altitude - 54) {
+    if (p->s.center.y >= (game->altitude - 50)) {
 	p->velocity.y = -3;
     }
-    if (p->s.center.y <= game->altitude - 746) {
+    if (p->s.center.y <= (game->altitude - (yres - 50))) {
 	p->velocity.y = 3;
     }
 
@@ -547,14 +544,14 @@ void render(Game *game)
 		glTexCoord2f(1.0f, 1.0f); glVertex2i(c->x+w, c->y-h);
 	}	
 	glEnd();
-	int i = 12000;
+	int i = STARTING_ALTITUDE;
 	while (i > 0) {
 	    if ((game->altitude < (i + 400)) && (game->altitude > (i - 400))) {
 		Rect r;
 		char cstr[10];
-		r.left = xres/2 + 200;
-		r.bot = i - 400;
-		r.center = xres/2 + 200;
+		r.left = xres - 50;
+		r.bot = i - yres/2;
+		r.center = xres - 50;
 		r.width = 500;
 		r.height = 100;
 		sprintf (cstr, "%d", i);
@@ -576,7 +573,7 @@ void render(Game *game)
 	if (sky) {
 	    glBindTexture(GL_TEXTURE_2D, skyTexture);
 	    glBegin(GL_QUADS);
-	    int ybottom = game->altitude - 800;
+	    int ybottom = game->altitude - yres;
 	    glTexCoord2f(0.0f, 1.0f); glVertex2i(0, ybottom);
 	    glTexCoord2f(0.0f, 0.0f); glVertex2i(0, game->altitude);
 	    glTexCoord2f(1.0f, 0.0f); glVertex2i(xres, game->altitude);

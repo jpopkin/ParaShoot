@@ -43,6 +43,7 @@ Ppmimage *skyImage = NULL;
 Ppmimage *characterImage = NULL;
 GLuint skyTexture;
 GLuint characterTexture;
+GLuint silhouetteTexture;
 int sky = 1;
 int character = 1;
 int keys[65536];
@@ -196,15 +197,16 @@ void reshape_window(Game *game, int width, int height)
     Character *p = &game->character;
     size_flag = true;
     setup_screen_res(width, height);
-    p->s.center.x = xres/2;
-    p->s.center.y = yres/2;
+    p->s.center.x = width/2;
+    p->s.center.y = game->altitude - 400;
     glViewport(0,0, (GLint)width, (GLint)height);
     glMatrixMode(GL_PROJECTION); glLoadIdentity();
     glMatrixMode(GL_MODELVIEW); glLoadIdentity();
-    glOrtho(0, xres, 0, yres, -1, 1);
+    //glOrtho(0, width, 0, height, -1, 1);
+    glOrtho(0, width, (game->altitude - height), game->altitude, -1, 1);
     set_title();
-    p->s.center.x = xres/2;
-    p->s.center.y = yres/2;
+    p->s.center.x = width/2;
+    p->s.center.y = game->altitude - 400;
 }
 
 
@@ -262,10 +264,11 @@ void init_opengl(void)
     //load the images file into a ppm structure
     //
     skyImage = ppm6GetImage("./images/Sunset.ppm");
-    characterImage = ppm6GetImage("./images/character.ppm");
+    characterImage = ppm6GetImage("./images/character2.ppm");
     //create opengl texture elements
     glGenTextures(1, &skyTexture);
     glGenTextures(1, &characterTexture);
+    glGenTextures(1, &silhouetteTexture);
     //
     //sky
     glBindTexture(GL_TEXTURE_2D, skyTexture);
@@ -281,6 +284,16 @@ void init_opengl(void)
     glTexImage2D(GL_TEXTURE_2D, 0, 3, characterImage->width,
 	    characterImage->height, 0, GL_RGB, GL_UNSIGNED_BYTE,
 	    characterImage->data);
+
+    //
+    //character silhouette
+    glBindTexture(GL_TEXTURE_2D, silhouetteTexture);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+    unsigned char *silhouetteData = buildAlphaData(characterImage);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, characterImage->width, 
+	    characterImage->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, silhouetteData);
+    delete [] silhouetteData;
 }
 
 void check_resize(Game *game, XEvent *e)
@@ -444,6 +457,27 @@ void movement(Game *game)
     if (keys[XK_Left]) {
 	p->velocity.x += -2;
     }
+    if (keys[XK_Up]) {
+	p->velocity.y += 2;
+    }
+    if (keys[XK_Down]) {
+	p->velocity.y -= 2;
+    }
+
+    //border collision detection
+    //
+    if (p->s.center.x <= xres - 746) {
+	p->velocity.x = 3;
+    }
+    if (p->s.center.x >= xres - 54) {
+	p->velocity.x = -3;
+    }
+    if (p->s.center.y >= game->altitude - 54) {
+	p->velocity.y = -3;
+    }
+    if (p->s.center.y <= game->altitude - 746) {
+	p->velocity.y = 3;
+    }
 
     //check for off-screen
     /*
@@ -487,14 +521,18 @@ void render(Game *game)
 	if (sky) {
 	    glBindTexture(GL_TEXTURE_2D, skyTexture);
 	    glBegin(GL_QUADS);
-	    int ybottom = game->altitude - 800;
+	    int ybottom = game->altitude - yres;
 	    glTexCoord2f(0.0f, 1.0f); glVertex2i(0, ybottom);
 	    glTexCoord2f(0.0f, 0.0f); glVertex2i(0, game->altitude);
 	    glTexCoord2f(1.0f, 0.0f); glVertex2i(xres, game->altitude);
 	    glTexCoord2f(1.0f, 1.0f); glVertex2i(xres, ybottom);
 	    glEnd();
 	}
-	glBindTexture(GL_TEXTURE_2D, characterTexture);
+	//glBindTexture(GL_TEXTURE_2D, characterTexture);
+	glBindTexture(GL_TEXTURE_2D, silhouetteTexture);
+	glEnable(GL_ALPHA_TEST);
+	glAlphaFunc(GL_GREATER, 0.0f);
+	glColor4ub(255,255,255,255);
 	glBegin(GL_QUADS);
 	glTexCoord2f(0.0f, 1.0f); glVertex2i(c->x-w, c->y-h);
 	glTexCoord2f(0.0f, 0.0f); glVertex2i(c->x-w, c->y+h);

@@ -42,9 +42,13 @@ GLfloat gCameraY = 0.0f;
 
 Ppmimage *skyImage = NULL;
 Ppmimage *characterImage = NULL;
+Ppmimage *BlueBirdImage = NULL;
+
 GLuint skyTexture;
 GLuint characterTexture;
 GLuint silhouetteTexture;
+GLuint BlueBirdTexture;
+
 int sky = 1;
 int character = 1;
 int keys[65536];
@@ -264,8 +268,11 @@ void init_opengl(Game *game)
     //
     skyImage = ppm6GetImage("./images/Sunset.ppm");
     characterImage = ppm6GetImage("./images/character2.ppm");
+    BlueBirdImage = ppm6GetImage("./images/BlueBird.ppm");
+
     //create opengl texture elements
     glGenTextures(1, &skyTexture);
+    glGenTextures(1, &BlueBirdTexture);
     glGenTextures(1, &characterTexture);
     glGenTextures(1, &silhouetteTexture);
     //
@@ -275,6 +282,7 @@ void init_opengl(Game *game)
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
     glTexImage2D(GL_TEXTURE_2D, 0, 3, skyImage->width, skyImage->height,
 	    0, GL_RGB, GL_UNSIGNED_BYTE, skyImage->data);
+
     //
     //character
     glBindTexture(GL_TEXTURE_2D, characterTexture);
@@ -285,6 +293,15 @@ void init_opengl(Game *game)
 	    characterImage->data);
 
     //
+//bird
+    glBindTexture(GL_TEXTURE_2D, BlueBirdTexture);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, BlueBirdImage->width,
+	    BlueBirdImage->height, 0, GL_RGB, GL_UNSIGNED_BYTE,
+	    BlueBirdImage->data);
+
+    //
     //character silhouette
     glBindTexture(GL_TEXTURE_2D, silhouetteTexture);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
@@ -293,7 +310,7 @@ void init_opengl(Game *game)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, characterImage->width, 
 	    characterImage->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, silhouetteData);
     delete [] silhouetteData;
-}
+    }
 
 void check_resize(Game *game, XEvent *e)
 {
@@ -514,6 +531,10 @@ void render(Game *game)
 	Vec *c = &game->character.s.center;
 	w = 49;
 	h = 79;
+
+	int h1 = 27;
+	int w1 = 35;
+
 	glColor3f(1.0, 1.0, 1.0);
 	if (sky) {
 	    glBindTexture(GL_TEXTURE_2D, skyTexture);
@@ -537,12 +558,26 @@ void render(Game *game)
 		glTexCoord2f(0.5f, 0.0f); glVertex2i(c->x+w, c->y+h);
 		glTexCoord2f(0.5f, 1.0f); glVertex2i(c->x+w, c->y-h);
 	}
-	if (game->character.velocity.x >= 0) {
+if (game->character.velocity.x >= 0) {
 		glTexCoord2f(0.5f, 1.0f); glVertex2i(c->x-w, c->y-h);
 		glTexCoord2f(0.5f, 0.0f); glVertex2i(c->x-w, c->y+h);
 		glTexCoord2f(1.0f, 0.0f); glVertex2i(c->x+w, c->y+h);
 		glTexCoord2f(1.0f, 1.0f); glVertex2i(c->x+w, c->y-h);
+		glEnd();
 	}	
+
+if(game->altitude < 11500 && game->altitude > 10000)
+	{	  
+	    glBindTexture(GL_TEXTURE_2D, BlueBirdTexture);
+	    glBegin(GL_QUADS);
+	    //int ybottom = game->altitude - yres;
+	    glTexCoord2f(0.5f, 1.0f); glVertex2i( w1 , h1);
+	    glTexCoord2f(0.5f, 0.0f); glVertex2i(w1 , h1);
+	    glTexCoord2f(1.0f, 0.0f); glVertex2i(w1, h1);
+	    glTexCoord2f(1.0f, 1.0f); glVertex2i(w1, h1);
+	    glEnd();
+	}
+	
 	glEnd();
 	int i = STARTING_ALTITUDE;
 	while (i > 0) {
@@ -580,6 +615,8 @@ void render(Game *game)
 	    glTexCoord2f(1.0f, 1.0f); glVertex2i(xres, ybottom);
 	    glEnd();
 	}
+
+
 	glPopMatrix();
 
 	Rect start;

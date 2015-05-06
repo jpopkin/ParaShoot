@@ -71,6 +71,7 @@ struct Character {
 struct Game {
     Shape box;
     Character character;
+    Character BlueBird;
     int n;
     float altitude;
     Game() {
@@ -297,7 +298,7 @@ void init_opengl(Game *game)
     glBindTexture(GL_TEXTURE_2D, BlueBirdTexture);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, BlueBirdImage->width,
+    glTexImage2D(GL_TEXTURE_2D, 0, 3, BlueBirdImage->width,
 	    BlueBirdImage->height, 0, GL_RGB, GL_UNSIGNED_BYTE,
 	    BlueBirdImage->data);
 
@@ -326,10 +327,27 @@ void check_resize(Game *game, XEvent *e)
 void makeCharacter(Game *game)
 {
     Character *p = &game->character;
+    Character *b = &game->BlueBird;
     p->s.center.x = xres/2;
-    p->s.center.y = (game->altitude - (yres/2));
+    p->s.center.y = (game->altitude- (yres/2));
     p->velocity.y = 0;
     p->velocity.x = 0;
+   
+//	start.centerx = xres/2;
+//	start.centery = game->altitude - 200;
+//	start.bot = game->altitude - 200;
+//	start.width = 500;
+//	start.height = 100;
+//	start.center = xres/2 + 200;
+//	start.left = start.centerx;
+//	start.right = start.centerx;
+//	start.top = game->altitude - 200;
+
+ 
+    b->s.center.x = xres/2-100;
+    b->s.center.y = yres/2-200;
+    b->velocity.x = 0;
+    b->velocity.y=0;
     game->n++;
     start_flag = false;
 }
@@ -529,11 +547,11 @@ void render(Game *game)
 	glPushMatrix();
 	glTranslatef(0.f, gCameraY, 0.f);
 	Vec *c = &game->character.s.center;
+	Vec *b = &game->BlueBird.s.center;
 	w = 49;
 	h = 79;
-
-	int h1 = 27;
-	int w1 = 35;
+int	wB= 35;
+int	hB= 27;
 
 	glColor3f(1.0, 1.0, 1.0);
 	if (sky) {
@@ -571,10 +589,10 @@ if(game->altitude < 11500 && game->altitude > 10000)
 	    glBindTexture(GL_TEXTURE_2D, BlueBirdTexture);
 	    glBegin(GL_QUADS);
 	    //int ybottom = game->altitude - yres;
-	    glTexCoord2f(0.5f, 1.0f); glVertex2i( w1 , h1);
-	    glTexCoord2f(0.5f, 0.0f); glVertex2i(w1 , h1);
-	    glTexCoord2f(1.0f, 0.0f); glVertex2i(w1, h1);
-	    glTexCoord2f(1.0f, 1.0f); glVertex2i(w1, h1);
+	    glTexCoord2f(0.5f, 1.0f); glVertex2i( b->x-wB , b->y-hB);
+	    glTexCoord2f(0.5f, 0.0f); glVertex2i(b->x-wB , c->y+hB);
+	    glTexCoord2f(1.0f, 0.0f); glVertex2i(b->x+wB, b->y+hB);
+	    glTexCoord2f(1.0f, 1.0f); glVertex2i(b->x+wB, c->y-hB);
 	    glEnd();
 	}
 	

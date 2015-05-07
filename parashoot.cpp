@@ -15,18 +15,19 @@
 extern "C" {
 #include "fonts.h"
 }
+#include "jonP.h"
 #define WINDOW_WIDTH  800
 #define WINDOW_HEIGHT 800
 #define STARTING_ALTITUDE 12000
 #define MAX_PARTICLES 1
 #define GRAVITY 3.0
-#define USE_SOUND
+//#define USE_SOUND
 
-#ifdef USE_SOUND
-#include <FMOD/fmod.h>
-#include <FMOD/wincompat.h>
-#include "fmod.h"
-#endif
+//#ifdef USE_SOUND
+//#include <FMOD/fmod.h>
+//#include <FMOD/wincompat.h>
+//#include "fmod.h"
+//#endif
 
 //X Windows variables
 Display *dpy;
@@ -90,8 +91,8 @@ int check_keys(XEvent *e);
 void movement(Game *game);
 void render(Game *game);
 void check_resize(Game *game, XEvent *e);
-void create_sounds();
-void play();
+//void create_sounds();
+//void play();
 void init_keys();
 //-----------------------------------------------------------------------------
 //Setup timers
@@ -117,7 +118,7 @@ int main(void)
     initXWindows();
     Game game;
     init_opengl(&game);
-    create_sounds();
+   create_sounds();
     play();
     //declare game object
     init_keys();
@@ -449,7 +450,7 @@ p->s.center.x += 16.0;
 return 0;
 }
 */
-
+/*
 void create_sounds() {
 #ifdef USE_SOUND
     if(fmod_init()) {
@@ -465,9 +466,8 @@ void create_sounds() {
 }
 
 void play() {
-    fmod_playsound(0);
 }
-
+*/
 void movement(Game *game)
 {
     Character *p;
@@ -550,8 +550,8 @@ void render(Game *game)
 	Vec *b = &game->BlueBird.s.center;
 	w = 49;
 	h = 79;
-int	wB= 35;
-int	hB= 27;
+	int wB= 35;
+	int hB= 27;
 
 	glColor3f(1.0, 1.0, 1.0);
 	if (sky) {

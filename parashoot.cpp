@@ -20,7 +20,7 @@ extern "C" {
 #define WINDOW_HEIGHT 800
 #define STARTING_ALTITUDE 12000
 #define MAX_PARTICLES 1
-#define GRAVITY 10.0
+#define GRAVITY 3.0
 //#define USE_SOUND
 
 //#ifdef USE_SOUND
@@ -206,6 +206,7 @@ void reshape_window(Game *game, int width, int height)
     setup_screen_res(width, height);
     p->s.center.x = width/2;
     p->s.center.y = (game->altitude - height) / 2;
+
     glViewport(0,0, (GLint)width, (GLint)height);
     glMatrixMode(GL_PROJECTION); glLoadIdentity();
     glMatrixMode(GL_MODELVIEW); glLoadIdentity();
@@ -297,6 +298,7 @@ void init_opengl(Game *game)
     //
 //bird
 	glBindTexture(GL_TEXTURE_2D, BlueBirdTexture);
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexImage2D(GL_TEXTURE_2D, 0, 3, BlueBirdImage->width, 
@@ -345,8 +347,8 @@ void makeCharacter(Game *game)
 //	start.top = game->altitude - 200;
 
  
-    b->s.center.x = xres/2-100;
-    b->s.center.y = yres/2-200;
+    b->s.center.x = xres/2-200;
+    b->s.center.y = (game->altitude- (yres/2)+10);
     b->velocity.x = 0;
     b->velocity.y=0;
     game->n++;
@@ -471,7 +473,7 @@ void play() {
 void movement(Game *game)
 {
     Character *p;
-
+    Character *b;
     if (game->n <= 0)
 	return;
 
@@ -481,6 +483,15 @@ void movement(Game *game)
     p->s.center.y -= GRAVITY;
     game->altitude -= GRAVITY;
     gCameraY += (float)GRAVITY;
+
+    b = &game->BlueBird;
+    b->s.center.x += b->velocity.x;
+    b->s.center.y += b->velocity.y;
+    b->s.center.y -= GRAVITY;
+    //game->altitude -= GRAVITY;
+    //gCameraY += (float)GRAVITY;
+
+
     //check for collision with objects here...
     //Shape *s;
     if (keys[XK_Right]) {
@@ -550,8 +561,8 @@ void render(Game *game)
 	Vec *b = &game->BlueBird.s.center;
 	w = 49;
 	h = 79;
-	int wB= 35;
-	int hB= 27;
+	int wB= 65;
+	int hB= 26;
 
 	glColor3f(1.0, 1.0, 1.0);
 	if (sky) {
@@ -587,16 +598,14 @@ if (game->character.velocity.x >= 0) {
 
 //if(game->altitude < 11500 && game->altitude > 10000)
 	{
-    	    glEnd();	    
-	    glEnable(GL_TEXTURE_2D);
-  	    glGenTextures(1, &BlueBirdTexture);	    
+  	  //  glGenTextures(1, &BlueBirdTexture);	    
 	    glBindTexture(GL_TEXTURE_2D, BlueBirdTexture);
 	    glBegin(GL_QUADS);
 	    //int ybottom = game->altitude - yres;
-	    glTexCoord2f(0.0f, 1.0f); glVertex2i( b->x-wB , b->y-hB);
-	    glTexCoord2f(0.0f, 0.0f); glVertex2i(b->x-wB , c->y+hB);
-	    glTexCoord2f(0.5f, 0.0f); glVertex2i(b->x+wB, b->y+hB);
-	    glTexCoord2f(0.5f, 1.0f); glVertex2i(b->x+wB, c->y-hB);
+	    glTexCoord2f(0.0f, 1.0f); glVertex2i(b->x-wB -10 , b->y-hB -10);
+	    glTexCoord2f(0.0f, 0.0f); glVertex2i(b->x-wB -10, b->y+hB -10);
+	    glTexCoord2f(0.5f, 0.0f); glVertex2i(b->x+wB -10, b->y+hB -10);
+	    glTexCoord2f(0.5f, 1.0f); glVertex2i(b->x+wB -10, b->y-hB -10);
 	    glEnd();
 	}
 	

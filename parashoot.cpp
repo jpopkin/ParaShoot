@@ -20,7 +20,7 @@ extern "C" {
 #define WINDOW_HEIGHT 800
 #define STARTING_ALTITUDE 12000
 #define MAX_PARTICLES 1
-#define GRAVITY 3.0
+#define GRAVITY 10.0
 //#define USE_SOUND
 
 //#ifdef USE_SOUND
@@ -296,12 +296,12 @@ void init_opengl(Game *game)
 
     //
 //bird
-    glBindTexture(GL_TEXTURE_2D, BlueBirdTexture);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
-    glTexImage2D(GL_TEXTURE_2D, 0, 3, BlueBirdImage->width,
-	    BlueBirdImage->height, 0, GL_RGB, GL_UNSIGNED_BYTE,
-	    BlueBirdImage->data);
+	glBindTexture(GL_TEXTURE_2D, BlueBirdTexture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexImage2D(GL_TEXTURE_2D, 0, 3, BlueBirdImage->width, 
+		BlueBirdImage->height, 0, GL_RGB, GL_UNSIGNED_BYTE, 
+		BlueBirdImage->data);
 
     //
     //character silhouette
@@ -575,6 +575,7 @@ void render(Game *game)
 		glTexCoord2f(0.0f, 0.0f); glVertex2i(c->x-w, c->y+h);
 		glTexCoord2f(0.5f, 0.0f); glVertex2i(c->x+w, c->y+h);
 		glTexCoord2f(0.5f, 1.0f); glVertex2i(c->x+w, c->y-h);
+		glEnd();
 	}
 if (game->character.velocity.x >= 0) {
 		glTexCoord2f(0.5f, 1.0f); glVertex2i(c->x-w, c->y-h);
@@ -584,15 +585,18 @@ if (game->character.velocity.x >= 0) {
 		glEnd();
 	}	
 
-if(game->altitude < 11500 && game->altitude > 10000)
-	{	  
+//if(game->altitude < 11500 && game->altitude > 10000)
+	{
+    	    glEnd();	    
+	    glEnable(GL_TEXTURE_2D);
+  	    glGenTextures(1, &BlueBirdTexture);	    
 	    glBindTexture(GL_TEXTURE_2D, BlueBirdTexture);
 	    glBegin(GL_QUADS);
 	    //int ybottom = game->altitude - yres;
-	    glTexCoord2f(0.5f, 1.0f); glVertex2i( b->x-wB , b->y-hB);
-	    glTexCoord2f(0.5f, 0.0f); glVertex2i(b->x-wB , c->y+hB);
-	    glTexCoord2f(1.0f, 0.0f); glVertex2i(b->x+wB, b->y+hB);
-	    glTexCoord2f(1.0f, 1.0f); glVertex2i(b->x+wB, c->y-hB);
+	    glTexCoord2f(0.0f, 1.0f); glVertex2i( b->x-wB , b->y-hB);
+	    glTexCoord2f(0.0f, 0.0f); glVertex2i(b->x-wB , c->y+hB);
+	    glTexCoord2f(0.5f, 0.0f); glVertex2i(b->x+wB, b->y+hB);
+	    glTexCoord2f(0.5f, 1.0f); glVertex2i(b->x+wB, c->y-hB);
 	    glEnd();
 	}
 	
@@ -627,10 +631,10 @@ if(game->altitude < 11500 && game->altitude > 10000)
 	    glBindTexture(GL_TEXTURE_2D, skyTexture);
 	    glBegin(GL_QUADS);
 	    int ybottom = game->altitude - yres;
-	    glTexCoord2f(0.0f, 1.0f); glVertex2i(0, ybottom);
-	    glTexCoord2f(0.0f, 0.0f); glVertex2i(0, game->altitude);
-	    glTexCoord2f(1.0f, 0.0f); glVertex2i(xres, game->altitude);
-	    glTexCoord2f(1.0f, 1.0f); glVertex2i(xres, ybottom);
+	    glTexCoord2f(0.0f, 0.0f); glVertex2i(0, ybottom);
+	    glTexCoord2f(1.0f, 0.0f); glVertex2i(0, game->altitude);
+	    glTexCoord2f(1.0f, 1.0f); glVertex2i(xres, game->altitude);
+	    glTexCoord2f(0.0f, 1.0f); glVertex2i(xres, ybottom);
 	    glEnd();
 	}
 

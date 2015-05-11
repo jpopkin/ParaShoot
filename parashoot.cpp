@@ -300,7 +300,7 @@ void init_opengl(Game *game)
     //
     //bird
     glBindTexture(GL_TEXTURE_2D, BsilhouetteTexture);
-   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  // glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     unsigned char *BsilhouetteData = buildAlphaData(BlueBirdImage);
@@ -351,7 +351,7 @@ void makeCharacter(Game *game)
     //	start.top = game->altitude - 200;
 
 
-    b->s.center.x = xres/2-200;
+    b->s.center.x = xres/2-400;
     b->s.center.y = (game->altitude- (yres/2)+10);
     b->velocity.x = 0;
     b->velocity.y=0;
@@ -494,6 +494,8 @@ void movement(Game *game)
     b->s.center.y -= GRAVITY;
     //game->altitude -= GRAVITY;
     //gCameraY += (float)GRAVITY;
+    
+
 
 
     //check for collision with objects here...
@@ -604,6 +606,8 @@ void render(Game *game)
 
 	if(game->altitude < 11500 && game->altitude > 10000)
 	{
+	    Character *bv;
+	   bv = &game->BlueBird;
 
 	 glBindTexture(GL_TEXTURE_2D, BsilhouetteTexture);
 	glEnable(GL_ALPHA_TEST);
@@ -616,9 +620,8 @@ void render(Game *game)
 	    glTexCoord2f(0.5f, 1.0f); glVertex2i(b->x+wB, b->y-hB);
 	    glEnd();
 	   
+         bv->velocity.x =9; //9 is good 20 is faster
 	}	
-	    //  b->s.center.x += b->velocity.x;
-	    //	bb->s.center.x += 2;
 
 
 
